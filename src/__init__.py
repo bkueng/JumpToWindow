@@ -57,6 +57,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.columns_visible[1] = False
 
         self.source=None
+        self.source_view=None
 
 
     def save_settings(self):
@@ -129,7 +130,49 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             if(not visible): return(False)
         return visible
 
-    def show_entries(self):
+
+    def source_entries_replaced(self, view, user_data=None):
+        if(view==self.source_view):
+            GObject.idle_add(self.refresh_entries)
+
+    def source_entry_added(self, view, entry, user_data=None):
+        if(view==self.source_view):
+            GObject.idle_add(self.refresh_entries)
+
+    def source_entry_deleted(self, view, entry, user_data=None):
+        if(view==self.source_view):
+            GObject.idle_add(self.refresh_entries)
+
+    # connect to a source and listen for changes
+    def track_source(self, new_source):
+        if(new_source==self.source): return
+        # disconnect old source...
+        try:
+            if(self.source_view!=None):
+                self.source_view.disconnect(self.source_view_id_replace)
+                self.source_view.disconnect(self.source_view_id_add)
+                self.source_view.disconnect(self.source_view_id_del)
+        except:
+            pass
+        self.source_view = new_source.get_entry_view()
+        if(self.source_view!=None):
+            self.source_view_id_replace= \
+                    self.source_view.connect("entries-replaced",
+                    self.source_entries_replaced)
+            self.source_view_id_add= \
+                    self.source_view.connect("entry-added",
+                    self.source_entry_added)
+            self.source_view_id_del= \
+                    self.source_view.connect("entry-deleted",
+                    self.source_entry_deleted)
+
+        self.source=new_source
+
+    def refresh_entries(self):
+        self.show_entries(True)
+
+    # updates the currently playing source if necessary
+    def show_entries(self, need_refresh=False):
         try:
             # current playing entry:
 #            entry = self.shell_player.get_playing_entry()
@@ -151,12 +194,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 #            print list(x)
 
 
-            #TODO: check source: if it did not change, don't update
             new_source = self.shell_player.get_active_source()
-            #if(new_source==self.source): return
+            if(not need_refresh and new_source==self.source): return
 
+            self.track_source(new_source)
 
-            self.source=new_source
             model = Gtk.ListStore(str, str, str, int)
 
             i=0
