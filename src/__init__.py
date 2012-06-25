@@ -106,6 +106,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.window.show()
 #        self.window.present() #helps grabbing the focus ?
         self.show_entries()
+        self.make_default_entry_selection()
         self.txt_search.grab_focus()
         self.txt_search.select_region(0,-1)
         return "success"
@@ -199,7 +200,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
             self.track_source(new_source)
 
-            model = Gtk.ListStore(str, str, str, int)
+            model = Gtk.ListStore(str, str, str, int, str)
 
             i=0
             for row in self.source.props.query_model: #or: base_query_model ?
@@ -207,14 +208,13 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
                 artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
                 album = entry.get_string(RB.RhythmDBPropType.ALBUM)
                 title = entry.get_string(RB.RhythmDBPropType.TITLE)
-                model.append([artist, album, title, i])
+                location = entry.get_string(RB.RhythmDBPropType.LOCATION)
+                model.append([artist, album, title, i, location])
                 i+=1
 
             self.modelfilter = model.filter_new()
             self.modelfilter.set_visible_func(self.visible_func, None)
             self.playlist_tree.set_model(self.modelfilter)
-
-            self.select_first_item()
 
         except Exception, e:
             print "Exception: "+str(e)
@@ -280,6 +280,23 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         iter=self.modelfilter.get_iter_first()
         if(iter): self.select_item(iter)
 
+    def make_default_entry_selection(self):
+        # by default, select currently playing song
+        playing_entry = self.shell_player.get_playing_entry()
+        if(playing_entry != None):
+            playing_loc = playing_entry.get_string(RB.RhythmDBPropType.LOCATION)
+            iter=self.modelfilter.get_iter_first()
+            while(iter!=None):
+                entry_loc=self.modelfilter.get_value(iter, self.column_item_loc)
+                if(entry_loc == playing_loc):
+                    self.select_item(iter)
+                    return
+                iter=self.modelfilter.iter_next(iter)
+        model, seliter=self.tree_selection.get_selected()
+        if(seliter==None):
+            self.select_first_item() # fallback if current playing not found
+
+
     def txt_search_changed(self, widget, string, *args):
         self.modelfilter.refilter()
         self.select_first_item()
@@ -311,6 +328,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         column.set_visible(False)
         treeView.append_column(column)
         self.column_item_idx=3
+
+        column = Gtk.TreeViewColumn()
+        column.set_visible(False)
+        treeView.append_column(column)
+        self.column_item_loc=4
 
     def delete_event(self,window,event):
         #don't delete; hide instead
