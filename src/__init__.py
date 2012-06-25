@@ -19,7 +19,15 @@ import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import sys
+import ConfigParser
 
+
+SECTION_KEY = "JumpToWindow"
+KEY_WINDOW_X = "window_x"
+KEY_WINDOW_Y = "window_y"
+KEY_WINDOW_W = "window_w"
+KEY_WINDOW_H = "window_h"
+CONFIG_FILE = "~/.config/JumpToWindow.conf"
  
 
 class MyDBUSService(dbus.service.Object):
@@ -50,11 +58,52 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
         self.source=None
 
+
+    def save_settings(self):
+        config = ConfigParser.ConfigParser()
+
+        config.add_section(SECTION_KEY)
+        width,height=self.window.get_size()
+        config.set(SECTION_KEY, KEY_WINDOW_X, self.window_x)
+        config.set(SECTION_KEY, KEY_WINDOW_Y, self.window_y)
+        config.set(SECTION_KEY, KEY_WINDOW_W, width)
+        config.set(SECTION_KEY, KEY_WINDOW_H, height)
+
+        config_file_name = os.path.expanduser(CONFIG_FILE)
+        dir=os.path.dirname(config_file_name)
+        if(not os.path.exists(dir)):
+            os.mkdir(dir)
+        with open(config_file_name, 'wb') as configfile:
+            config.write(configfile)
+
+    def load_settings(self):
+        try:
+
+            config = ConfigParser.ConfigParser()
+            config.add_section(SECTION_KEY)
+            self.window_x = 50
+            self.window_y = 50
+            config.set('DEFAULT', KEY_WINDOW_X, str(self.window_x))
+            config.set('DEFAULT', KEY_WINDOW_Y, str(self.window_y))
+            config.set('DEFAULT', KEY_WINDOW_W, '500')
+            config.set('DEFAULT', KEY_WINDOW_H, '500')
+
+            config.read(os.path.expanduser(CONFIG_FILE))
+
+            self.window_x = config.getint(SECTION_KEY, KEY_WINDOW_X)
+            self.window_y = config.getint(SECTION_KEY, KEY_WINDOW_Y)
+            # moving the window here has no effect
+            width = config.getint(SECTION_KEY, KEY_WINDOW_W)
+            height = config.getint(SECTION_KEY, KEY_WINDOW_H)
+            self.window.set_default_size(width,height)
+
+        except Exception, e:
+            print "Exception: "+str(e)
+
         
     def dbus_activate(self, str_arg):
         self.window.show()
 #        self.window.present() #helps grabbing the focus ?
-
         self.show_entries()
         self.txt_search.grab_focus()
         self.txt_search.select_region(0,-1)
@@ -225,6 +274,16 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         #don't delete; hide instead
         window.hide_on_delete()
         return True
+    
+    def window_show(self, widget):
+        self.window.move(self.window_x, self.window_y)
+
+    def window_hide(self, widget):
+        self.save_settings()
+
+    def window_configure(self, widget, event):
+        self.window_x,self.window_y=self.window.get_position()
+        return False
 
     def do_activate (self):
 
@@ -244,7 +303,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.window=builder.get_object("window1")
         self.window.connect("key-press-event", self.keypress)
         self.window.connect("delete-event", self.delete_event)
+        self.window.connect("hide", self.window_hide)
+        self.window.connect("show", self.window_show)
         self.window.set_title("Rhythmbox - JumpToWindow")
+        self.window.add_events(Gdk.EventType.CONFIGURE)
+        self.window.connect("configure-event", self.window_configure)
         
         self.playlist_tree=builder.get_object("tree_playlist")
         self.create_columns(self.playlist_tree)
@@ -259,8 +322,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         btn_clear=builder.get_object("btn_clear")
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
 
-        # load the settings
-        self.window.set_size_request(500,500)
+
+        self.load_settings()
 
     
     def do_deactivate (self):
