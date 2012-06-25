@@ -256,11 +256,13 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     def select_previous_item(self):
         model, seliter=self.tree_selection.get_selected()
+        sel_path=model.get_path(seliter)
+        # this is really slow. why the heck is there no iter_previous?
         iter=self.modelfilter.get_iter_first()
         if(iter!=None and seliter!=None):
             nextiter=model.iter_next(iter)
             while(nextiter!=None):
-                if(model.get_path(nextiter)==model.get_path(seliter)):
+                if(model.get_path(nextiter)==sel_path):
                     self.select_item(iter)
                     return
                 iter=nextiter
