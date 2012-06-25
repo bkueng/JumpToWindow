@@ -200,17 +200,15 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
             self.track_source(new_source)
 
-            model = Gtk.ListStore(str, str, str, int, str)
+            model = Gtk.ListStore(str, str, str, str)
 
-            i=0
             for row in self.source.props.query_model: #or: base_query_model ?
                 entry = row[0]
                 artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
                 album = entry.get_string(RB.RhythmDBPropType.ALBUM)
                 title = entry.get_string(RB.RhythmDBPropType.TITLE)
                 location = entry.get_string(RB.RhythmDBPropType.LOCATION)
-                model.append([artist, album, title, i, location])
-                i+=1
+                model.append([artist, album, title, location])
 
             self.modelfilter = model.filter_new()
             self.modelfilter.set_visible_func(self.visible_func, None)
@@ -223,15 +221,13 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     def play_selected_item(self):
         model, treeiter=self.tree_selection.get_selected()
         if(treeiter!=None):
-            item_idx=self.modelfilter.get_value(treeiter, self.column_item_idx)
-            i=0
-            # we assume the source did not change since model creation
+            sel_loc=self.modelfilter.get_value(treeiter, self.column_item_loc)
             for row in self.source.props.query_model:
-                if(i==item_idx):
-                    entry=row[0]
+                entry=row[0]
+                loc = entry.get_string(RB.RhythmDBPropType.LOCATION)
+                if(loc==sel_loc):
                     self.shell_player.play_entry(entry, self.source)
                     return True
-                i+=1
         return False
 
     def keypress(self, widget, event):
@@ -327,12 +323,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         column = Gtk.TreeViewColumn()
         column.set_visible(False)
         treeView.append_column(column)
-        self.column_item_idx=3
-
-        column = Gtk.TreeViewColumn()
-        column.set_visible(False)
-        treeView.append_column(column)
-        self.column_item_loc=4
+        self.column_item_loc=3
 
     def delete_event(self,window,event):
         #don't delete; hide instead
