@@ -11,7 +11,6 @@
 # GNU General Public License for more details.
 #
 
-import gconf
 
 from gi.repository import Gtk, GObject, Peas, RB, Gdk
 import os
@@ -19,20 +18,17 @@ import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import sys
-import ConfigParser
 
-SECTION_KEY = "JumpToWindow"
-KEY_WINDOW_X = "window_x"
-KEY_WINDOW_Y = "window_y"
-KEY_WINDOW_W = "window_w"
-KEY_WINDOW_H = "window_h"
-CONFIG_FILE = "~/.config/JumpToWindow.conf"
- 
+from configuration import Configuration
 
+
+# IPC class: for hotkey activation
 class MyDBUSService(dbus.service.Object):
     def __init__(self, jump_to_window):
-        bus_name = dbus.service.BusName('org.rhythmbox.JumpToWindow', bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, bus_name, '/org/rhythmbox/JumpToWindow')
+        bus_name = dbus.service.BusName('org.rhythmbox.JumpToWindow'
+                , bus=dbus.SessionBus())
+        dbus.service.Object.__init__(self, bus_name
+                , '/org/rhythmbox/JumpToWindow')
         self.jump_to_window = jump_to_window
  
     @dbus.service.method('org.rhythmbox.JumpToWindow')
@@ -52,55 +48,13 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         DBusGMainLoop(set_as_default=True)
         self.dbus_service = MyDBUSService(self)
 
-        self.columns_visible = [ True ]*3
-        self.columns_visible[1] = False
+        self.config=Configuration()
 
         self.source=None
         self.source_view=None
 
 
-    def save_settings(self):
-        config = ConfigParser.ConfigParser()
 
-        config.add_section(SECTION_KEY)
-        width,height=self.window.get_size()
-        config.set(SECTION_KEY, KEY_WINDOW_X, self.window_x)
-        config.set(SECTION_KEY, KEY_WINDOW_Y, self.window_y)
-        config.set(SECTION_KEY, KEY_WINDOW_W, width)
-        config.set(SECTION_KEY, KEY_WINDOW_H, height)
-
-        config_file_name = os.path.expanduser(CONFIG_FILE)
-        dir=os.path.dirname(config_file_name)
-        if(not os.path.exists(dir)):
-            os.mkdir(dir)
-        with open(config_file_name, 'wb') as configfile:
-            config.write(configfile)
-
-    def load_settings(self):
-        try:
-
-            config = ConfigParser.ConfigParser()
-            config.add_section(SECTION_KEY)
-            self.window_x = 50
-            self.window_y = 50
-            config.set('DEFAULT', KEY_WINDOW_X, str(self.window_x))
-            config.set('DEFAULT', KEY_WINDOW_Y, str(self.window_y))
-            config.set('DEFAULT', KEY_WINDOW_W, '500')
-            config.set('DEFAULT', KEY_WINDOW_H, '500')
-
-            config.read(os.path.expanduser(CONFIG_FILE))
-
-            self.window_x = config.getint(SECTION_KEY, KEY_WINDOW_X)
-            self.window_y = config.getint(SECTION_KEY, KEY_WINDOW_Y)
-            # moving the window here has no effect
-            width = config.getint(SECTION_KEY, KEY_WINDOW_W)
-            height = config.getint(SECTION_KEY, KEY_WINDOW_H)
-            self.window.set_default_size(width,height)
-
-        except Exception, e:
-            print "Exception: "+str(e)
-
-        
     def dbus_activate(self, str_arg):
         self.window.show()
 #        self.window.present() #helps grabbing the focus ?
@@ -136,8 +90,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         text_list = self.txt_search.get_text().lower().split(' ')
         for text in text_list:
             visible=False
-            for i in range(len(self.columns_visible)):
-                if(self.columns_visible[i] and 
+            for i in range(len(self.config.columns_visible)):
+                if(self.config.columns_visible[i] and 
                         text in model.get_value(iter, i).lower()):
                     visible=True
             if(not visible): return(False)
@@ -327,21 +281,21 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         column = Gtk.TreeViewColumn("Artist", rendererText, text=0)
         column.set_sort_column_id(0)    
         column.set_property("expand", True)
-        column.set_visible(self.columns_visible[0])
+        column.set_visible(self.config.columns_visible[0])
         treeView.append_column(column)
         
         rendererText = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Album", rendererText, text=1)
         column.set_sort_column_id(1)
         column.set_property("expand", True)
-        column.set_visible(self.columns_visible[1])
+        column.set_visible(self.config.columns_visible[1])
         treeView.append_column(column)
 
         rendererText = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Title", rendererText, text=2)
         column.set_sort_column_id(2)
         column.set_property("expand", True)
-        column.set_visible(self.columns_visible[2])
+        column.set_visible(self.config.columns_visible[2])
         treeView.append_column(column)
 
         column = Gtk.TreeViewColumn()
@@ -350,18 +304,18 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.column_item_loc=3
 
     def delete_event(self,window,event):
-        #don't delete; hide instead
+        #don't delete the window; hide instead
         window.hide_on_delete()
         return True
     
     def window_show(self, widget):
-        self.window.move(self.window_x, self.window_y)
+        self.window.move(self.config.window_x, self.config.window_y)
 
     def window_hide(self, widget):
-        self.save_settings()
+        self.config.save_settings(self.window)
 
     def window_configure(self, widget, event):
-        self.window_x,self.window_y=self.window.get_position()
+        self.config.window_x,self.config.window_y=self.window.get_position()
         return False
 
     def do_activate (self):
@@ -409,10 +363,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
 
 
-        self.load_settings()
+        self.config.load_settings(self.window)
 
     
     def do_deactivate (self):
         
-        self.window.hide()
+        self.window.destroy()
+        self.window=None
 
