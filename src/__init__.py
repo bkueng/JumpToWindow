@@ -110,6 +110,9 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.txt_search.select_region(0,-1)
         return "success"
 
+    def playlist_row_activated(self, treeview, path, view_column,
+            user_param1=None):
+        self.play_selected_item()
 
     def btn_play_hide_clicked(self, widget, data=None):
         if(self.play_selected_item()):
@@ -249,6 +252,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             else:
                 if(self.play_selected_item()):
                     self.window.hide()
+            return True
         elif(key == "escape"):
             self.window.hide()
             return True
@@ -387,6 +391,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.playlist_tree=builder.get_object("tree_playlist")
         self.create_columns(self.playlist_tree)
         self.tree_selection = builder.get_object("tree_playlist_selection")
+        self.playlist_tree.connect("row-activated", self.playlist_row_activated)
 
         self.txt_search=builder.get_object("txt_search")
         self.txt_search.connect("changed", self.txt_search_changed, None)
