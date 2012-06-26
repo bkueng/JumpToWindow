@@ -249,6 +249,9 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             else:
                 if(self.play_selected_item()):
                     self.window.hide()
+        elif(key == "escape"):
+            self.window.hide()
+            return True
         elif(key == "up"):
             self.select_previous_item()
             return True
