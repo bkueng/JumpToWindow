@@ -21,7 +21,6 @@ from dbus.mainloop.glib import DBusGMainLoop
 import sys
 import ConfigParser
 
-
 SECTION_KEY = "JumpToWindow"
 KEY_WINDOW_X = "window_x"
 KEY_WINDOW_Y = "window_y"
@@ -112,14 +111,24 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         return "success"
 
 
-    def btn_play_clicked(self, widget, data=None):
+    def btn_play_hide_clicked(self, widget, data=None):
         if(self.play_selected_item()):
             self.window.hide()
+    
+    def btn_hide_clicked(self, widget, data=None):
+        self.window.hide()
+
+    def btn_enqueue_clicked(self, widget, data=None):
+        self.enqueue_selected_item()
 
     def btn_clear_clicked(self, widget, data=None):
         self.txt_search.set_text("")
         self.txt_search.grab_focus()
 
+    def get_queue_source(self):
+        return self.shell.get_property("queue-source")
+
+    # model filter: use search text to filter items
     def visible_func(self, model, iter, user_data):
         text_list = self.txt_search.get_text().lower().split(' ')
         for text in text_list:
@@ -175,21 +184,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     # updates the currently playing source if necessary
     def show_entries(self, need_refresh=False):
         try:
-            # current playing entry:
-#            entry = self.shell_player.get_playing_entry()
-#            if(entry != None):
-#                print dir(entry)
-## uri:
-#                self.location = entry.get_string(RB.RhythmDBPropType.LOCATION)
-#                print self.location
 
-#print source items:
-#            print source
-#            for row in source.props.query_model:
-#                entry = row[0]
-#                print entry.get_string(RB.RhythmDBPropType.TITLE)
-
-# the playlists:
+# code snipplet for the playlists:
 #        for x in list(self.shell.props.sourcelist.props.model):
 ##           if list(x)[2] == "Playlists"
 #            print list(x)
@@ -217,8 +213,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         except Exception, e:
             print "Exception: "+str(e)
 
-
-    def play_selected_item(self):
+    def get_selected_entry(self):
         model, treeiter=self.tree_selection.get_selected()
         if(treeiter!=None):
             sel_loc=self.modelfilter.get_value(treeiter, self.column_item_loc)
@@ -226,15 +221,34 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
                 entry=row[0]
                 loc = entry.get_string(RB.RhythmDBPropType.LOCATION)
                 if(loc==sel_loc):
-                    self.shell_player.play_entry(entry, self.source)
-                    return True
+                    return entry
+        return None
+
+    def play_selected_item(self):
+        sel_entry=self.get_selected_entry()
+        if(sel_entry!=None):
+            self.shell_player.play_entry(sel_entry, self.source)
+            return True
+        return False
+
+    def enqueue_selected_item(self):
+        sel_entry=self.get_selected_entry()
+        queue_source=self.get_queue_source()
+        if(sel_entry!=None and queue_source!=None):
+            queue_query_model = queue_source.get_property("query-model")
+            if(queue_query_model!=None):
+                queue_query_model.add_entry(sel_entry,-1)
+                return True
         return False
 
     def keypress(self, widget, event):
         key = Gdk.keyval_name (event.keyval).lower()
         if(key == "return"):
-            if(self.play_selected_item()):
-                self.window.hide()
+            if(event.state & Gdk.ModifierType.MOD1_MASK):
+                self.enqueue_selected_item()
+            else:
+                if(self.play_selected_item()):
+                    self.window.hide()
         elif(key == "up"):
             self.select_previous_item()
             return True
@@ -243,6 +257,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             return True
 
         #print "key pressed "+key
+        #print " state "+str(event.state)
         return False
 
     def select_next_item(self):
@@ -373,8 +388,14 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.txt_search=builder.get_object("txt_search")
         self.txt_search.connect("changed", self.txt_search_changed, None)
 
-        btn_play=builder.get_object("btn_play")
-        btn_play.connect("clicked", self.btn_play_clicked, None)
+        btn_play_hide=builder.get_object("btn_play_hide")
+        btn_play_hide.connect("clicked", self.btn_play_hide_clicked, None)
+
+        btn_hide=builder.get_object("btn_hide")
+        btn_hide.connect("clicked", self.btn_hide_clicked, None)
+
+        btn_enqueue=builder.get_object("btn_enqueue")
+        btn_enqueue.connect("clicked", self.btn_enqueue_clicked, None)
 
         btn_clear=builder.get_object("btn_clear")
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
