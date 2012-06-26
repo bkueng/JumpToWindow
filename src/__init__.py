@@ -49,19 +49,34 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.dbus_service = MyDBUSService(self)
 
         self.config=Configuration()
+        self.config.connect("config-changed", self.config_changed)
 
         self.source=None
         self.source_view=None
 
+        self.is_updating=False
 
 
     def dbus_activate(self, str_arg):
         self.window.show()
 #        self.window.present() #helps grabbing the focus ?
-        self.show_entries()
+
+        self.is_updating=True #avoid updating the filter multiple times
+        search_changed=False
+        try:
+            self.txt_search.grab_focus()
+            if(self.config.keep_search_text):
+                self.txt_search.select_region(0,-1)
+            else:
+                search_changed=(self.txt_search.get_text()!="")
+                self.txt_search.set_text("")
+            self.show_entries()
+            if(self.is_updating and search_changed):
+                self.modelfilter.refilter()
+        except Exception, e:
+            print "Exception: "+str(e)
+        self.is_updating=False
         self.make_default_entry_selection()
-        self.txt_search.grab_focus()
-        self.txt_search.select_region(0,-1)
         return "success"
 
     def playlist_row_activated(self, treeview, path, view_column,
@@ -90,8 +105,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         text_list = self.txt_search.get_text().lower().split(' ')
         for text in text_list:
             visible=False
-            for i in range(len(self.config.columns_visible)):
-                if(self.config.columns_visible[i] and 
+            for i in range(len(self.config.columns_search)):
+                if(self.config.columns_search[i] and 
                         text in model.get_value(iter, i).lower()):
                     visible=True
             if(not visible): return(False)
@@ -153,19 +168,22 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
             self.track_source(new_source)
 
-            model = Gtk.ListStore(str, str, str, str)
+            model = Gtk.ListStore(str, str, str, int, str)
 
             for row in self.source.props.query_model: #or: base_query_model ?
                 entry = row[0]
                 artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
                 album = entry.get_string(RB.RhythmDBPropType.ALBUM)
                 title = entry.get_string(RB.RhythmDBPropType.TITLE)
+                play_count = int(entry.get_ulong(
+                    RB.RhythmDBPropType.PLAY_COUNT))
                 location = entry.get_string(RB.RhythmDBPropType.LOCATION)
-                model.append([artist, album, title, location])
+                model.append([artist, album, title, play_count, location])
 
             self.modelfilter = model.filter_new()
             self.modelfilter.set_visible_func(self.visible_func, None)
             self.playlist_tree.set_model(self.modelfilter)
+            self.is_updating=False
 
         except Exception, e:
             print "Exception: "+str(e)
@@ -272,11 +290,18 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
 
     def txt_search_changed(self, widget, string, *args):
+        if(self.is_updating): return
         self.modelfilter.refilter()
         self.select_first_item()
 
     def create_columns(self, treeView):
     
+        # clear the columns first
+        column=treeView.get_column(0)
+        while(column!=None):
+            treeView.remove_column(column)
+            column=treeView.get_column(0)
+
         rendererText = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Artist", rendererText, text=0)
         column.set_sort_column_id(0)    
@@ -298,10 +323,16 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         column.set_visible(self.config.columns_visible[2])
         treeView.append_column(column)
 
+        rendererText = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Play count", rendererText, text=3)
+        column.set_sort_column_id(3)
+        column.set_visible(self.config.columns_visible[3])
+        treeView.append_column(column)
+
         column = Gtk.TreeViewColumn()
         column.set_visible(False)
         treeView.append_column(column)
-        self.column_item_loc=3
+        self.column_item_loc=4
 
     def delete_event(self,window,event):
         #don't delete the window; hide instead
@@ -317,6 +348,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     def window_configure(self, widget, event):
         self.config.window_x,self.config.window_y=self.window.get_position()
         return False
+
+    def config_changed(self, config):
+        self.create_columns(self.playlist_tree)
+        self.refresh_entries()
+        self.config.save_settings(self.window)
 
     def do_activate (self):
 
@@ -343,7 +379,6 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.window.connect("configure-event", self.window_configure)
         
         self.playlist_tree=builder.get_object("tree_playlist")
-        self.create_columns(self.playlist_tree)
         self.tree_selection = builder.get_object("tree_playlist_selection")
         self.playlist_tree.connect("row-activated", self.playlist_row_activated)
 
@@ -362,8 +397,12 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         btn_clear=builder.get_object("btn_clear")
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
 
+        btn_config=builder.get_object("btn_config")
+        btn_config.connect("clicked", self.config.show_config_dialog, None)
+
 
         self.config.load_settings(self.window)
+        self.create_columns(self.playlist_tree)
 
     
     def do_deactivate (self):
