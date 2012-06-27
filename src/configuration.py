@@ -31,6 +31,7 @@ class Configuration(gobject.GObject):
         # init default values
         self.columns_visible = [ True ]*4
         self.columns_visible[1] = False
+        self.columns_visible[3] = False
 
         self.columns_search = [ True ]*3
         self.columns_search[1] = False
