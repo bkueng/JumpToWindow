@@ -5,4 +5,4 @@ IAge=2
 Name=Jump to Window
 Description=show a 'Jump to' window using a global hotkey for fast song switching.
 Authors=Beat Kueng <beat-kueng@gmx.net>
-Website=TODO
+Website=https://github.com/bkueng/JumpToWindow

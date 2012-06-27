@@ -1,0 +1,43 @@
+                            JumpToWindow
+                            ============
+
+            Copyright 2012 Beat Küng <beat-kueng@gmx.net>
+
+
+JumpToWindow is a Rhythmbox plugin which shows a 'Jump to' window when a certain
+hotkey is pressed. It allows to fast selecting a song from the currently playing
+source (without having to use the mouse).
+It's very similar to the 'Jump to File' feature in Winamp, including the ability
+to enqueue a song.
+
+
+
+Installation
+------------
+
+	1) Run make install
+	   Or copy the content of this folder to the directory
+	   "~/.local/share/rhythmbox/plugins/JumpToWindow/"
+	   (If this directory doesn't exist, create it!)
+
+	2) Install a global hotkey that executes the script
+	   "~/.local/share/rhythmbox/plugins/JumpToWindow/src/activate.py"
+
+	   - For gnome go to System -> Preferences -> Keyboard Shortcuts -> Add
+	   - Or you can use the window manager independant package 'xbindkeys'
+	     (http://www.nongnu.org/xbindkeys/xbindkeys.html)
+
+	3) Enable the plugin in Rhythmbox under 'Edit > Plugins'
+
+	4) You probably have to lower the focus prevention level in your window
+	   manager, that the Jump to window gets the focus, when the hotkey is
+	   pressed.
+
+
+Miscellaneous
+-------------
+
+if you have any improvements or suggestions you are welcome to 
+implement them and/or contact me
+
+	
