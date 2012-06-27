@@ -39,6 +39,7 @@ class Configuration(gobject.GObject):
         self.window_y = 50
 
         self.keep_search_text = True
+        self.font_size = 0
 
         self.config_window=None
         self.is_loading=False
@@ -55,6 +56,7 @@ class Configuration(gobject.GObject):
         config.set(SECTION_KEY, 'window_h', height)
 
         config.set(SECTION_KEY, 'keep_search', str(self.keep_search_text))
+        config.set(SECTION_KEY, 'font_size', str(self.font_size))
 
         for i in range(len(self.columns_visible)):
             config.set(SECTION_KEY, 'columns_visible'+str(i),
@@ -81,6 +83,7 @@ class Configuration(gobject.GObject):
             config.set('DEFAULT', 'window_h', '500')
 
             config.set('DEFAULT', 'keep_search', str(self.keep_search_text))
+            config.set('DEFAULT', 'font_size', str(self.font_size))
 
             for i in range(len(self.columns_visible)):
                 config.set('DEFAULT', 'columns_visible'+str(i),
@@ -99,6 +102,7 @@ class Configuration(gobject.GObject):
             main_window.set_default_size(width,height)
 
             self.keep_search_text=config.getboolean(SECTION_KEY, 'keep_search')
+            self.font_size=config.getint(SECTION_KEY, 'font_size')
 
             for i in range(len(self.columns_visible)):
                 self.columns_visible[i]=config.getboolean(SECTION_KEY
@@ -117,6 +121,14 @@ class Configuration(gobject.GObject):
     def btn_ok_clicked(self, widget, data=None):
         self.config_window.destroy()
         self.config_window=None
+
+    def txt_font_size_changed(self, widget, string, *args):
+        if(self.is_loading): return
+        try:
+            self.font_size = int(self.txt_font_size.get_text())
+        except:
+            self.font_size = 0
+        self.emit("config-changed")
 
     def chk_toggled(self, widget):
         if(self.is_loading): return
@@ -172,6 +184,11 @@ class Configuration(gobject.GObject):
             self.chk_search_title=builder.get_object("chk_search_title")
             self.chk_search_title.connect("toggled", self.chk_toggled)
             self.chk_search_title.set_active(self.columns_search[2])
+
+            self.txt_font_size=builder.get_object("txt_font_size")
+            self.txt_font_size.connect("changed", self.txt_font_size_changed
+                    , None)
+            self.txt_font_size.set_value(self.font_size)
 
             btn_ok=builder.get_object("btn_ok")
             btn_ok.connect("clicked", self.btn_ok_clicked)

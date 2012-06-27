@@ -302,7 +302,10 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             treeView.remove_column(column)
             column=treeView.get_column(0)
 
+        font_size=int(self.config.font_size)
+
         rendererText = Gtk.CellRendererText()
+        if(font_size>0): rendererText.set_property("size-points", font_size)
         column = Gtk.TreeViewColumn("Artist", rendererText, text=0)
         column.set_sort_column_id(0)    
         column.set_property("expand", True)
@@ -310,6 +313,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         treeView.append_column(column)
         
         rendererText = Gtk.CellRendererText()
+        if(font_size>0): rendererText.set_property("size-points", font_size)
         column = Gtk.TreeViewColumn("Album", rendererText, text=1)
         column.set_sort_column_id(1)
         column.set_property("expand", True)
@@ -317,6 +321,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         treeView.append_column(column)
 
         rendererText = Gtk.CellRendererText()
+        if(font_size>0): rendererText.set_property("size-points", font_size)
         column = Gtk.TreeViewColumn("Title", rendererText, text=2)
         column.set_sort_column_id(2)
         column.set_property("expand", True)
@@ -324,6 +329,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         treeView.append_column(column)
 
         rendererText = Gtk.CellRendererText()
+        if(font_size>0): rendererText.set_property("size-points", font_size)
         column = Gtk.TreeViewColumn("Play count", rendererText, text=3)
         column.set_sort_column_id(3)
         column.set_visible(self.config.columns_visible[3])
