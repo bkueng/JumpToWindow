@@ -164,7 +164,7 @@ class Configuration(gobject.GObject):
             source_dir=os.path.dirname(os.path.abspath(__file__))
 
             builder = Gtk.Builder()
-            builder.add_from_file(source_dir+"/configuration.glade")
+            builder.add_from_file(source_dir+"/../ui/configuration.glade")
             self.config_window=builder.get_object("window1")
             self.config_window.connect("delete-event", self.delete_event)
             self.config_window.set_title(

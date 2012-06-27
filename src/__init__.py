@@ -383,7 +383,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         source_dir=os.path.dirname(os.path.abspath(__file__))
 
         builder = Gtk.Builder()
-        builder.add_from_file(source_dir+"/window.glade")
+        builder.add_from_file(source_dir+"/../ui/window.glade")
         self.window=builder.get_object("window1")
         self.window.connect("key-press-event", self.keypress)
         self.window.connect("delete-event", self.delete_event)

@@ -18,7 +18,7 @@ all:
 
 install:
 	mkdir -p $(INSTALL_DIR)
-	cp -r src JumpToWindow.plugin $(INSTALL_DIR)
+	cp -r src ui JumpToWindow.plugin $(INSTALL_DIR)
 	@echo 
 	@echo "==================================================================="
 	@echo "Now create a global hotkey that executes the script"
