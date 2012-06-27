@@ -349,10 +349,19 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.window.move(self.config.window_x, self.config.window_y)
 
     def window_hide(self, widget):
+        width,height=self.window.get_size()
+        if(width!=self.config.window_w or height!=self.config.window_h):
+            self.config.need_save_config=True
+            self.config.window_w = width
+            self.config.window_h = height
         self.config.save_settings(self.window)
 
     def window_configure(self, widget, event):
-        self.config.window_x,self.config.window_y=self.window.get_position()
+        window_x,window_y=self.window.get_position()
+        if(window_x!=self.config.window_x or window_y!=self.config.window_y):
+            self.config.need_save_config=True
+            self.config.window_x = window_x
+            self.config.window_y = window_y
         return False
 
     def config_changed(self, config):

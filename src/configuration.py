@@ -37,6 +37,8 @@ class Configuration(gobject.GObject):
 
         self.window_x = 50
         self.window_y = 50
+        self.window_w = 500
+        self.window_h = 500
 
         self.keep_search_text = True
         self.font_size = 0
@@ -44,8 +46,12 @@ class Configuration(gobject.GObject):
         self.config_window=None
         self.is_loading=False
 
+        self.need_save_config=False
+
 
     def save_settings(self, main_window):
+        if(not self.need_save_config): return
+        self.need_save_config=False
         config = ConfigParser.ConfigParser()
 
         config.add_section(SECTION_KEY)
@@ -79,8 +85,8 @@ class Configuration(gobject.GObject):
             config.add_section(SECTION_KEY)
             config.set('DEFAULT', 'window_x', str(self.window_x))
             config.set('DEFAULT', 'window_y', str(self.window_y))
-            config.set('DEFAULT', 'window_w', '500')
-            config.set('DEFAULT', 'window_h', '500')
+            config.set('DEFAULT', 'window_w', str(self.window_w))
+            config.set('DEFAULT', 'window_h', str(self.window_h))
 
             config.set('DEFAULT', 'keep_search', str(self.keep_search_text))
             config.set('DEFAULT', 'font_size', str(self.font_size))
@@ -96,7 +102,7 @@ class Configuration(gobject.GObject):
 
             self.window_x = config.getint(SECTION_KEY, 'window_x')
             self.window_y = config.getint(SECTION_KEY, 'window_y')
-            # moving the window here has no effect
+            # we move the window on every show to keep a fixed position
             width = config.getint(SECTION_KEY, 'window_w')
             height = config.getint(SECTION_KEY, 'window_h')
             main_window.set_default_size(width,height)
@@ -128,7 +134,7 @@ class Configuration(gobject.GObject):
             self.font_size = int(self.txt_font_size.get_text())
         except:
             self.font_size = 0
-        self.emit("config-changed")
+        self.config_changed()
 
     def chk_toggled(self, widget):
         if(self.is_loading): return
@@ -143,7 +149,12 @@ class Configuration(gobject.GObject):
         self.columns_search[1] = self.chk_search_album.get_active()
         self.columns_search[2] = self.chk_search_title.get_active()
 
+        self.config_changed()
+
+    def config_changed(self):
+        self.need_save_config=True
         self.emit("config-changed")
+
 
     def show_config_dialog(self, *var_args):
 
