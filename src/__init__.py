@@ -22,20 +22,25 @@ import sys
 from configuration import Configuration
 
 
+global_dbus_obj=None
+
 # IPC class: for hotkey activation
 class MyDBUSService(dbus.service.Object):
-    def __init__(self, jump_to_window):
+    def __init__(self, main_window):
         bus_name = dbus.service.BusName('org.rhythmbox.JumpToWindow'
                 , bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name
                 , '/org/rhythmbox/JumpToWindow')
-        self.jump_to_window = jump_to_window
- 
+        self.main_window = main_window
+
+    def set_main_window(self, main_window):
+        self.main_window=main_window
+
     @dbus.service.method('org.rhythmbox.JumpToWindow')
     def dbus_activate(self, str_arg):
-        return self.jump_to_window.dbus_activate(str_arg)
+        if(self.main_window==None): return "error: not initialized"
+        return self.main_window.dbus_activate(str_arg)
  
-
 
 
 class JumpToPlaying(GObject.GObject, Peas.Activatable):
@@ -45,8 +50,15 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     def __init__(self):
         GObject.GObject.__init__(self)
 
-        DBusGMainLoop(set_as_default=True)
-        self.dbus_service = MyDBUSService(self)
+        global global_dbus_obj
+
+        if(global_dbus_obj==None):
+            DBusGMainLoop(set_as_default=True)
+            self.dbus_service = MyDBUSService(self)
+            global_dbus_obj = self.dbus_service
+        else:
+            global_dbus_obj.set_main_window(self)
+            self.dbus_service = global_dbus_obj
 
         self.config=Configuration()
         self.config.connect("config-changed", self.config_changed)
@@ -421,7 +433,11 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     
     def do_deactivate (self):
-        
+
+        self.dbus_service.set_main_window(None)
+        self.dbus_service = None
+        self.config=None
+
         self.window.destroy()
         self.window=None
 
