@@ -16,17 +16,16 @@ from gi.repository import Gtk, GObject, Peas, RB, Gdk
 import os
 import sys
 import ConfigParser
-import gobject
 
 
 SECTION_KEY = "JumpToWindow"
 CONFIG_FILE = "~/.config/JumpToWindow.conf"
  
 
-class Configuration(gobject.GObject):
+class Configuration(GObject.GObject):
 
     def __init__(self):
-        self.__gobject_init__()
+        GObject.GObject.__init__(self)
 
         # init default values
         self.columns_visible = [ True ]*4
@@ -209,6 +208,6 @@ class Configuration(gobject.GObject):
 
         self.config_window.show()
 
-gobject.type_register(Configuration)
-gobject.signal_new("config-changed", Configuration, gobject.SIGNAL_RUN_FIRST,
-                   gobject.TYPE_NONE, ())
+GObject.type_register(Configuration)
+GObject.signal_new("config-changed", Configuration, GObject.SIGNAL_RUN_FIRST,
+                   GObject.TYPE_NONE, ())
