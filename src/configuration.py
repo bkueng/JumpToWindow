@@ -14,7 +14,6 @@
 
 from gi.repository import Gtk, GObject, Peas, RB, Gdk
 import os
-import sys
 import ConfigParser
 
 
