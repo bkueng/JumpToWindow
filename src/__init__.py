@@ -68,6 +68,9 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
         self.is_updating=False
 
+        self.was_last_space=False
+        self.last_cursor_pos = 0
+
 
     def dbus_activate(self, str_arg):
         self.window.show()
@@ -236,26 +239,37 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     def keypress(self, widget, event):
         key = Gdk.keyval_name (event.keyval).lower()
+        handled=True
+        cursor_pos = self.txt_search.get_property("cursor-position")
         if(key == "return"):
             if(event.state & Gdk.ModifierType.MOD1_MASK):
                 self.enqueue_selected_item()
             else:
                 if(self.play_selected_item()):
                     self.window.hide()
-            return True
         elif(key == "escape"):
             self.window.hide()
-            return True
         elif(key == "up"):
             self.select_previous_item()
-            return True
         elif(key == "down"):
             self.select_next_item()
-            return True
+        elif(key == "space"):
+            handled=False
+            if(self.txt_search.has_focus() and (self.was_last_space and 
+                    cursor_pos == self.last_cursor_pos+1 or
+                    self.txt_search.get_text()=="")):
+                self.select_next_item()
+                handled=True
+        else:
+            handled=False
+
+        self.was_last_space=(key=="space")
+        self.last_cursor_pos = cursor_pos
+        if(handled): self.last_cursor_pos-=1
 
         #print "key pressed "+key
         #print " state "+str(event.state)
-        return False
+        return handled
 
     def select_next_item(self):
         model, treeiter=self.tree_selection.get_selected()
