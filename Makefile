@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 
-INSTALL_DIR = ~/.local/share/rhythmbox/plugins/JumpToWindow
+INSTALL_DIR = $(HOME)/.local/share/rhythmbox/plugins/JumpToWindow
 # global: /usr/lib/rhythmbox/plugins
 
 all:

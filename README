@@ -17,11 +17,11 @@ Installation
 
 	1) Run make install
 	   Or copy the content of this folder to the directory
-	   "~/.local/share/rhythmbox/plugins/JumpToWindow/"
+	   "/home/<user>/.local/share/rhythmbox/plugins/JumpToWindow/"
 	   (If this directory doesn't exist, create it!)
 
 	2) Install a global hotkey that executes the script
-	   "~/.local/share/rhythmbox/plugins/JumpToWindow/src/activate.py"
+	   "/home/<user>/.local/share/rhythmbox/plugins/JumpToWindow/src/activate.py"
 
 	   - For gnome go to System -> Preferences -> Keyboard Shortcuts -> Add
 	   - Or you can use the window manager independant package 'xbindkeys'
