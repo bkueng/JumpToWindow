@@ -64,6 +64,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
         self.source=None
         self.source_view=None
+        self.modelfilter=None
 
         self.is_updating=False
 
@@ -138,7 +139,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     # connect to a source and listen for changes
     def track_source(self, new_source):
-        if(new_source==self.source): return
+        if(new_source==self.source): return True
         # disconnect old source...
         try:
             if(self.source_view!=None):
@@ -147,6 +148,10 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
                 self.source_view.disconnect(self.source_view_id_del)
         except:
             pass
+        self.source=new_source
+        if(new_source==None):
+            self.source_view=None
+            return False
         self.source_view = new_source.get_entry_view()
         if(self.source_view!=None):
             self.source_view_id_replace= \
@@ -158,8 +163,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             self.source_view_id_del= \
                     self.source_view.connect("entry-deleted",
                     self.source_entry_deleted)
-
-        self.source=new_source
+        return True
 
     def refresh_entries(self):
         self.show_entries(True)
@@ -177,7 +181,10 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             new_source = self.shell_player.get_active_source()
             if(not need_refresh and new_source==self.source): return
 
-            self.track_source(new_source)
+
+            if(not self.track_source(new_source)):
+                self.modelfilter=None
+                return
 
             model = Gtk.ListStore(str, str, str, int, str)
 
@@ -261,6 +268,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     def select_previous_item(self):
         model, seliter=self.tree_selection.get_selected()
+        if(self.modelfilter==None or seliter==None): return
         sel_path=model.get_path(seliter)
         # this is really slow. why the heck is there no iter_previous?
         iter=self.modelfilter.get_iter_first()
@@ -276,10 +284,12 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     def select_item(self, treeiter):
         self.tree_selection.select_iter(treeiter)
+        if(self.modelfilter==None): return
         path=self.modelfilter.get_path(treeiter)
         self.playlist_tree.scroll_to_cell(path)
 
     def select_first_item(self):
+        if(self.modelfilter==None): return
         iter=self.modelfilter.get_iter_first()
         if(iter): self.select_item(iter)
 
