@@ -390,7 +390,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     def config_changed(self, config):
         self.create_columns(self.playlist_tree)
         self.refresh_entries()
-        self.config.save_settings(self.window, self.playlist_tree)
+        GObject.idle_add(lambda : self.config.save_settings(
+            self.window, self.playlist_tree))
 
     def do_activate (self):
 
