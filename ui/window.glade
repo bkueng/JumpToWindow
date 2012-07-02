@@ -55,6 +55,8 @@
               <object class="GtkTreeView" id="tree_playlist">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="headers_clickable">False</property>
+                <property name="rules_hint">True</property>
                 <child internal-child="selection">
                   <object class="GtkTreeSelection" id="tree_playlist_selection"/>
                 </child>

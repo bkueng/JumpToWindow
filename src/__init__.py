@@ -342,42 +342,19 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             column=treeView.get_column(0)
 
         font_size=int(self.config.font_size)
-
-        rendererText = Gtk.CellRendererText()
-        if(font_size>0): rendererText.set_property("size-points", font_size)
-        column = Gtk.TreeViewColumn("Artist", rendererText, text=0)
-        column.set_sort_column_id(0)    
-        column.set_property("expand", True)
-        column.set_visible(self.config.columns_visible[0])
-        treeView.append_column(column)
+        column_headers = [ "Artist", "Album", "Title", "Play count" ]
+        for i in range(len(column_headers)):
+            rendererText = Gtk.CellRendererText()
+            if(font_size>0): rendererText.set_property("size-points", font_size)
+            column = Gtk.TreeViewColumn(column_headers[i], rendererText, text=i)
+            column.set_resizable(True)
+            column.set_visible(self.config.columns_visible[i])
+            treeView.append_column(column)
         
-        rendererText = Gtk.CellRendererText()
-        if(font_size>0): rendererText.set_property("size-points", font_size)
-        column = Gtk.TreeViewColumn("Album", rendererText, text=1)
-        column.set_sort_column_id(1)
-        column.set_property("expand", True)
-        column.set_visible(self.config.columns_visible[1])
-        treeView.append_column(column)
-
-        rendererText = Gtk.CellRendererText()
-        if(font_size>0): rendererText.set_property("size-points", font_size)
-        column = Gtk.TreeViewColumn("Title", rendererText, text=2)
-        column.set_sort_column_id(2)
-        column.set_property("expand", True)
-        column.set_visible(self.config.columns_visible[2])
-        treeView.append_column(column)
-
-        rendererText = Gtk.CellRendererText()
-        if(font_size>0): rendererText.set_property("size-points", font_size)
-        column = Gtk.TreeViewColumn("Play count", rendererText, text=3)
-        column.set_sort_column_id(3)
-        column.set_visible(self.config.columns_visible[3])
-        treeView.append_column(column)
-
         column = Gtk.TreeViewColumn()
         column.set_visible(False)
         treeView.append_column(column)
-        self.column_item_loc=4
+        self.column_item_loc=len(column_headers)
 
     def delete_event(self,window,event):
         #don't delete the window; hide instead
