@@ -67,6 +67,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.modelfilter=None
 
         self.is_updating=False
+        self.need_refresh_source=False
 
         self.was_last_space=False
         self.last_cursor_pos = 0
@@ -169,10 +170,12 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         return True
 
     def refresh_entries(self):
-        self.show_entries(True)
+        self.need_refresh_source=True
+        if(self.window.get_visible()):
+            self.show_entries()
 
     # updates the currently playing source if necessary
-    def show_entries(self, need_refresh=False):
+    def show_entries(self):
         try:
 
 # code snipplet for the playlists:
@@ -182,7 +185,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
 
             new_source = self.shell_player.get_active_source()
-            if(not need_refresh and new_source==self.source): return
+            if(not self.need_refresh_source and new_source==self.source): return
+            self.need_refresh_source=False
 
 
             if(not self.track_source(new_source)):
