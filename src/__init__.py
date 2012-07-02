@@ -241,7 +241,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         key = Gdk.keyval_name (event.keyval).lower()
         handled=True
         cursor_pos = self.txt_search.get_property("cursor-position")
-        if(key == "return"):
+        if(key == "return" or key == "kp_enter"):
             if(event.state & Gdk.ModifierType.MOD1_MASK):
                 self.enqueue_selected_item()
             else:
