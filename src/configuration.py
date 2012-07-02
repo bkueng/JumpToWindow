@@ -31,6 +31,8 @@ class Configuration(GObject.GObject):
         self.columns_visible[1] = False
         self.columns_visible[3] = False
 
+        self.columns_size = [ 150 ]*5
+
         self.columns_search = [ True ]*3
         self.columns_search[1] = False
 
@@ -48,7 +50,7 @@ class Configuration(GObject.GObject):
         self.need_save_config=False
 
 
-    def save_settings(self, main_window):
+    def save_settings(self, main_window, tree_view):
         if(not self.need_save_config): return
         self.need_save_config=False
         config = ConfigParser.ConfigParser()
@@ -69,6 +71,13 @@ class Configuration(GObject.GObject):
         for i in range(len(self.columns_search)):
             config.set(SECTION_KEY, 'columns_search'+str(i),
                     str(self.columns_search[i]))
+
+        columns=tree_view.get_columns()
+        for i in range(len(columns)):
+            if(columns[i].get_visible()):
+                self.columns_size[i] = columns[i].get_width()
+                config.set(SECTION_KEY, 'columns_size'+str(i),
+                        str(columns[i].get_width()))
 
         config_file_name = os.path.expanduser(CONFIG_FILE)
         dir=os.path.dirname(config_file_name)
@@ -97,6 +106,10 @@ class Configuration(GObject.GObject):
                 config.set('DEFAULT', 'columns_search'+str(i),
                         str(self.columns_search[i]))
 
+            for i in range(len(self.columns_size)):
+                config.set('DEFAULT', 'columns_size'+str(i),
+                        str(self.columns_size[i]))
+
             config.read(os.path.expanduser(CONFIG_FILE))
 
             self.window_x = config.getint(SECTION_KEY, 'window_x')
@@ -115,6 +128,10 @@ class Configuration(GObject.GObject):
             for i in range(len(self.columns_search)):
                 self.columns_search[i]=config.getboolean(SECTION_KEY
                         , 'columns_search'+str(i))
+
+            for i in range(len(self.columns_size)):
+                self.columns_size[i]=config.getint(SECTION_KEY
+                        , 'columns_size'+str(i))
 
         except Exception, e:
             print "Exception: "+str(e)

@@ -348,6 +348,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             if(font_size>0): rendererText.set_property("size-points", font_size)
             column = Gtk.TreeViewColumn(column_headers[i], rendererText, text=i)
             column.set_resizable(True)
+            column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            column.set_fixed_width(self.config.columns_size[i])
             column.set_visible(self.config.columns_visible[i])
             treeView.append_column(column)
         
@@ -370,7 +372,12 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             self.config.need_save_config=True
             self.config.window_w = width
             self.config.window_h = height
-        self.config.save_settings(self.window)
+        columns=self.playlist_tree.get_columns()
+        for i in range(len(columns)):
+            if(columns[i].get_visible() and 
+                    self.config.columns_size[i] != columns[i].get_width()):
+                self.config.need_save_config=True
+        self.config.save_settings(self.window, self.playlist_tree)
 
     def window_configure(self, widget, event):
         window_x,window_y=self.window.get_position()
@@ -383,7 +390,7 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
     def config_changed(self, config):
         self.create_columns(self.playlist_tree)
         self.refresh_entries()
-        self.config.save_settings(self.window)
+        self.config.save_settings(self.window, self.playlist_tree)
 
     def do_activate (self):
 
