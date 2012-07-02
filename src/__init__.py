@@ -118,6 +118,8 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
     # model filter: use search text to filter items
     def visible_func(self, model, iter, user_data):
+        return False
+        return True
         text_list = self.txt_search.get_text().lower().split(' ')
         for text in text_list:
             visible=False
@@ -193,21 +195,24 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
                 self.modelfilter=None
                 return
 
-            model = Gtk.ListStore(str, str, str, int, str)
+#            model = Gtk.ListStore(str, str, str, int, str)
+#
+#            for row in self.source.props.query_model: #or: base_query_model ?
+#                entry = row[0]
+#                artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
+#                album = entry.get_string(RB.RhythmDBPropType.ALBUM)
+#                title = entry.get_string(RB.RhythmDBPropType.TITLE)
+#                play_count = int(entry.get_ulong(
+#                    RB.RhythmDBPropType.PLAY_COUNT))
+#                location = entry.get_string(RB.RhythmDBPropType.LOCATION)
+#                model.append([artist, album, title, play_count, location])
+#
+#            self.modelfilter = model.filter_new()
+            query_model=self.source.props.query_model
+            self.modelfilter = query_model.filter_new()
 
-            for row in self.source.props.query_model: #or: base_query_model ?
-                entry = row[0]
-                artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
-                album = entry.get_string(RB.RhythmDBPropType.ALBUM)
-                title = entry.get_string(RB.RhythmDBPropType.TITLE)
-                play_count = int(entry.get_ulong(
-                    RB.RhythmDBPropType.PLAY_COUNT))
-                location = entry.get_string(RB.RhythmDBPropType.LOCATION)
-                model.append([artist, album, title, play_count, location])
-
-            self.modelfilter = model.filter_new()
             self.modelfilter.set_visible_func(self.visible_func, None)
-            self.playlist_tree.set_model(self.modelfilter)
+            self.playlist_tree.set_model(query_model)
             self.is_updating=False
 
         except Exception, e:
@@ -343,6 +348,9 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
 
         font_size=int(self.config.font_size)
         column_headers = [ "Artist", "Album", "Title", "Play count" ]
+        col=[RB.EntryViewColumn.ARTIST, RB.EntryViewColumn.ALBUM,
+                RB.EntryViewColumn.TITLE,
+                RB.EntryViewColumn.PLAY_COUNT ]
         for i in range(len(column_headers)):
             rendererText = Gtk.CellRendererText()
             if(font_size>0): rendererText.set_property("size-points", font_size)
@@ -351,11 +359,12 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_fixed_width(self.config.columns_size[i])
             column.set_visible(self.config.columns_visible[i])
-            treeView.append_column(column)
+            #treeView.append_column(column)
+            treeView.append_column(col[i], True)
         
         column = Gtk.TreeViewColumn()
         column.set_visible(False)
-        treeView.append_column(column)
+        #treeView.append_column(column)
         self.column_item_loc=len(column_headers)
 
     def delete_event(self,window,event):
@@ -419,6 +428,15 @@ class JumpToPlaying(GObject.GObject, Peas.Activatable):
         self.playlist_tree=builder.get_object("tree_playlist")
         self.tree_selection = builder.get_object("tree_playlist_selection")
         self.playlist_tree.connect("row-activated", self.playlist_row_activated)
+
+        container=builder.get_object("scrolledwindow1")
+        container.remove(self.playlist_tree)
+        self.playlist_tree=RB.EntryView()
+#        self.playlist_tree=RB.EntryView(self.shell.get_property("db"),
+#                self.shell_player)
+        self.playlist_tree.set_visible(True)
+        container.add_with_viewport(self.playlist_tree)
+        # see: http://developer.gnome.org/rhythmbox/unstable/RBEntryView.html
 
         self.txt_search=builder.get_object("txt_search")
         self.txt_search.connect("changed", self.txt_search_changed, None)
