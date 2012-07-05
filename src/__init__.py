@@ -42,8 +42,8 @@ class MyDBUSService(dbus.service.Object):
  
 
 
-class JumpToPlaying(GObject.GObject, Peas.Activatable):
-    __gtype_name = 'JumpToPlaying'
+class JumpToWindow(GObject.GObject, Peas.Activatable):
+    __gtype_name = 'JumpToWindow'
     object = GObject.property(type=GObject.GObject)
 
     def __init__(self):
