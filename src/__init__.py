@@ -20,6 +20,15 @@ from dbus.mainloop.glib import DBusGMainLoop
 
 from configuration import Configuration
 
+UI_STRING = '''
+<ui>
+<menubar name="MenuBar">
+<menu name="ViewMenu" action="View">
+<menuitem name="JumpToWindow" action="JumpToWindow"/>
+</menu>
+</menubar>
+</ui>
+'''
 
 global_dbus_obj=None
 
@@ -71,6 +80,9 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
         self.was_last_space=False
         self.last_cursor_pos = 0
+
+    def dbus_activate_from_menu(self, str_arg, shell):
+	self.dbus_activate(str_arg)
 
 
     def dbus_activate(self, str_arg):
@@ -442,6 +454,19 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
         self.config.load_settings(self.window)
         self.create_columns(self.playlist_tree)
+
+	shell = self.object
+        self.action = Gtk.Action (name='JumpToWindow', label=_('Show JumpToWindow'),
+                      tooltip=_(''),
+                      stock_id='')
+        self.action_id = self.action.connect ('activate', self.dbus_activate_from_menu, 'org.rhythmbox.JumpToWindow')
+        self.action_group = Gtk.ActionGroup (name='JumpToWindowPluginActions')
+        self.action_group.add_action_with_accel (self.action, "<control><shift>J")
+
+        uim = shell.props.ui_manager
+        uim.insert_action_group (self.action_group, 0)
+        self.ui_id = uim.add_ui_from_string (UI_STRING)
+        uim.ensure_update ()
 
     
     def do_deactivate (self):
