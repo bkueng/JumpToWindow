@@ -12,7 +12,7 @@
 #
 
 
-from gi.repository import Gtk, GObject, Peas, RB, Gdk
+from gi.repository import Gtk, GObject, RB, Gdk
 import os
 import ConfigParser
 
@@ -20,8 +20,12 @@ import ConfigParser
 SECTION_KEY = "JumpToWindow"
 CONFIG_FILE = "~/.config/JumpToWindow.conf"
  
+global_config_obj=None
+
 
 class Configuration(GObject.GObject):
+    __gtype_name__ = 'Configuration'
+    object = GObject.property(type=GObject.Object)
 
     def __init__(self):
         GObject.GObject.__init__(self)
@@ -44,8 +48,6 @@ class Configuration(GObject.GObject):
         self.keep_search_text = True
         self.font_size = 0
 
-        self.config_window=None
-        self.is_loading=False
 
         self.need_save_config=False
 
@@ -136,93 +138,10 @@ class Configuration(GObject.GObject):
         except Exception, e:
             print "Exception: "+str(e)
     
-    def delete_event(self,window,event):
-        self.config_window=None
-        return False
-
-    def btn_ok_clicked(self, widget, data=None):
-        self.config_window.destroy()
-        self.config_window=None
-
-    def txt_font_size_changed(self, widget, string, *args):
-        if(self.is_loading): return
-        try:
-            self.font_size = int(self.txt_font_size.get_text())
-        except:
-            self.font_size = 0
-        self.config_changed()
-
-    def chk_toggled(self, widget):
-        if(self.is_loading): return
-        self.keep_search_text = self.chk_keep_search.get_active()
-
-        self.columns_visible[0] = self.chk_artist.get_active()
-        self.columns_visible[1] = self.chk_album.get_active()
-        self.columns_visible[2] = self.chk_title.get_active()
-        self.columns_visible[3] = self.chk_play_count.get_active()
-
-        self.columns_search[0] = self.chk_search_artist.get_active()
-        self.columns_search[1] = self.chk_search_album.get_active()
-        self.columns_search[2] = self.chk_search_title.get_active()
-
-        self.config_changed()
-
     def config_changed(self):
         self.need_save_config=True
         self.emit("config-changed")
 
-
-    def show_config_dialog(self, *var_args):
-
-        self.is_loading=True
-        if(self.config_window==None):
-            source_dir=os.path.dirname(os.path.abspath(__file__))
-
-            builder = Gtk.Builder()
-            builder.add_from_file(source_dir+"/../ui/configuration.glade")
-            self.config_window=builder.get_object("window1")
-            self.config_window.connect("delete-event", self.delete_event)
-            self.config_window.set_title(
-                    "Rhythmbox - JumpToWindow Configuration")
-
-            self.chk_keep_search=builder.get_object("chk_keep_search")
-            self.chk_keep_search.connect("toggled", self.chk_toggled)
-            self.chk_keep_search.set_active(self.keep_search_text)
-
-            self.chk_artist=builder.get_object("chk_artist")
-            self.chk_artist.connect("toggled", self.chk_toggled)
-            self.chk_artist.set_active(self.columns_visible[0])
-            self.chk_album=builder.get_object("chk_album")
-            self.chk_album.connect("toggled", self.chk_toggled)
-            self.chk_album.set_active(self.columns_visible[1])
-            self.chk_title=builder.get_object("chk_title")
-            self.chk_title.connect("toggled", self.chk_toggled)
-            self.chk_title.set_active(self.columns_visible[2])
-            self.chk_play_count=builder.get_object("chk_play_count")
-            self.chk_play_count.connect("toggled", self.chk_toggled)
-            self.chk_play_count.set_active(self.columns_visible[3])
-
-            self.chk_search_artist=builder.get_object("chk_search_artist")
-            self.chk_search_artist.connect("toggled", self.chk_toggled)
-            self.chk_search_artist.set_active(self.columns_search[0])
-            self.chk_search_album=builder.get_object("chk_search_album")
-            self.chk_search_album.connect("toggled", self.chk_toggled)
-            self.chk_search_album.set_active(self.columns_search[1])
-            self.chk_search_title=builder.get_object("chk_search_title")
-            self.chk_search_title.connect("toggled", self.chk_toggled)
-            self.chk_search_title.set_active(self.columns_search[2])
-
-            self.txt_font_size=builder.get_object("txt_font_size")
-            self.txt_font_size.connect("changed", self.txt_font_size_changed
-                    , None)
-            self.txt_font_size.set_value(self.font_size)
-
-            btn_ok=builder.get_object("btn_ok")
-            btn_ok.connect("clicked", self.btn_ok_clicked)
-
-        self.is_loading=False
-
-        self.config_window.show()
 
 GObject.type_register(Configuration)
 GObject.signal_new("config-changed", Configuration, GObject.SIGNAL_RUN_FIRST,

@@ -18,7 +18,8 @@ import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 
-from configuration import Configuration
+import configuration
+from configuration_widget import ConfigurationWidget
 
 UI_STRING = '''
 <ui>
@@ -57,19 +58,6 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         GObject.GObject.__init__(self)
-
-        global global_dbus_obj
-
-        if(global_dbus_obj==None):
-            DBusGMainLoop(set_as_default=True)
-            self.dbus_service = MyDBUSService(self)
-            global_dbus_obj = self.dbus_service
-        else:
-            global_dbus_obj.set_main_window(self)
-            self.dbus_service = global_dbus_obj
-
-        self.config=Configuration()
-        self.config.connect("config-changed", self.config_changed)
 
         self.source=None
         self.source_view=None
@@ -361,6 +349,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             column = Gtk.TreeViewColumn(column_headers[i], rendererText, text=i)
             column.set_resizable(True)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            if(self.config.columns_size[i] <= 0):
+                self.config.columns_size[i]=100
             column.set_fixed_width(self.config.columns_size[i])
             column.set_visible(self.config.columns_visible[i])
             treeView.append_column(column)
@@ -407,6 +397,22 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
     def do_activate (self):
 
+        global global_dbus_obj
+
+        if(global_dbus_obj==None):
+            DBusGMainLoop(set_as_default=True)
+            self.dbus_service = MyDBUSService(self)
+            global_dbus_obj = self.dbus_service
+        else:
+            global_dbus_obj.set_main_window(self)
+            self.dbus_service = global_dbus_obj
+
+        if(configuration.global_config_obj==None):
+            configuration.global_config_obj=configuration.Configuration()
+        self.config=configuration.global_config_obj
+        self.config.connect("config-changed", self.config_changed)
+
+
         self.shell = self.object
         self.library = self.shell.props.library_source
         self.shell_player = self.shell.props.shell_player
@@ -447,9 +453,6 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
         btn_clear=builder.get_object("btn_clear")
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
-
-        btn_config=builder.get_object("btn_config")
-        btn_config.connect("clicked", self.config.show_config_dialog, None)
 
 
         self.config.load_settings(self.window)
