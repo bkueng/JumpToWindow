@@ -227,35 +227,89 @@
       </packing>
     </child>
     <child>
-      <object class="GtkBox" id="box3">
+      <object class="GtkFrame" id="frame4">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="label_xalign">0</property>
+        <property name="shadow_type">in</property>
         <child>
-          <object class="GtkLabel" id="label3">
+          <object class="GtkAlignment" id="alignment4">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">font size (0=default): </property>
+            <property name="left_padding">12</property>
+            <child>
+              <object class="GtkBox" id="box1">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkBox" id="box3">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkLabel" id="label3">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">font size (0=default): </property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="txt_font_size">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">●</property>
+                        <property name="invisible_char_set">True</property>
+                        <property name="adjustment">adjustment1</property>
+                        <property name="snap_to_ticks">True</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="chk_keep_search">
+                    <property name="label" translatable="yes">keep search text</property>
+                    <property name="use_action_appearance">False</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="use_action_appearance">False</property>
+                    <property name="xalign">0</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
           </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
         </child>
-        <child>
-          <object class="GtkSpinButton" id="txt_font_size">
+        <child type="label">
+          <object class="GtkLabel" id="label5">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="invisible_char">●</property>
-            <property name="adjustment">adjustment1</property>
-            <property name="snap_to_ticks">True</property>
-            <property name="numeric">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">&lt;b&gt;&lt;/b&gt;</property>
+            <property name="use_markup">True</property>
           </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
         </child>
       </object>
       <packing>
@@ -265,25 +319,38 @@
       </packing>
     </child>
     <child>
-      <object class="GtkCheckButton" id="chk_keep_search">
-        <property name="label" translatable="yes">keep search text</property>
-        <property name="use_action_appearance">False</property>
+      <object class="GtkFrame" id="frame3">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">False</property>
-        <property name="use_action_appearance">False</property>
-        <property name="xalign">0</property>
-        <property name="active">True</property>
-        <property name="draw_indicator">True</property>
+        <property name="can_focus">False</property>
+        <property name="label_xalign">0</property>
+        <property name="shadow_type">in</property>
+        <child>
+          <object class="GtkAlignment" id="alignment3">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="left_padding">12</property>
+            <child>
+              <object class="GtkLabel" id="lbl_hotkey">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="label">
+          <object class="GtkLabel" id="label4">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">&lt;b&gt;global Hotkey installation&lt;/b&gt;</property>
+            <property name="use_markup">True</property>
+          </object>
+        </child>
       </object>
       <packing>
         <property name="expand">False</property>
         <property name="fill">True</property>
         <property name="position">3</property>
       </packing>
-    </child>
-    <child>
-      <placeholder/>
     </child>
   </object>
 </interface>

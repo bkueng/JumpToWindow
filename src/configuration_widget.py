@@ -16,6 +16,14 @@ from gi.repository import Gtk, GObject, RB, Gdk, PeasGtk
 import configuration
 import os
 
+HOTKEY_HELP_TEXT = '''
+Install a global hotkey that executes the script
+   "%s"
+
+   - For gnome go to System -> Preferences -> Keyboard Shortcuts -> Add
+   - Or you can use the window manager independant package 'xbindkeys'
+     (http://www.nongnu.org/xbindkeys/xbindkeys.html)
+'''
 
 class ConfigurationWidget(GObject.GObject, PeasGtk.Configurable):
     __gtype_name__ = 'ConfigurationWidget' 
@@ -94,6 +102,10 @@ class ConfigurationWidget(GObject.GObject, PeasGtk.Configurable):
         self.txt_font_size.connect("changed", self.txt_font_size_changed
                 , None)
         self.txt_font_size.set_value(self.config.font_size)
+
+        lbl_hotkey=builder.get_object("lbl_hotkey")
+        hotkey_label=HOTKEY_HELP_TEXT.replace("%s", source_dir+"/activate.py")
+        lbl_hotkey.set_text(hotkey_label)
 
         box_config_widget=builder.get_object("box_config")
 
