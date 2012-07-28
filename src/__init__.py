@@ -363,6 +363,11 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.select_first_item()
         self.last_search_text=text
 
+    def tree_selection_changed(self, tree_selection):
+        has_selection = self.get_selected_entry()!=None
+        self.btn_play_hide.set_sensitive(has_selection)
+        self.btn_enqueue.set_sensitive(has_selection)
+
     def create_columns(self, treeView):
     
         # clear the columns first
@@ -466,20 +471,22 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.window.connect("configure-event", self.window_configure)
         
         self.playlist_tree=builder.get_object("tree_playlist")
-        self.tree_selection = builder.get_object("tree_playlist_selection")
         self.playlist_tree.connect("row-activated", self.playlist_row_activated)
+
+        self.tree_selection = builder.get_object("tree_playlist_selection")
+        self.tree_selection.connect("changed", self.tree_selection_changed)
 
         self.txt_search=builder.get_object("txt_search")
         self.txt_search.connect("changed", self.txt_search_changed, None)
 
-        btn_play_hide=builder.get_object("btn_play_hide")
-        btn_play_hide.connect("clicked", self.btn_play_hide_clicked, None)
+        self.btn_play_hide=builder.get_object("btn_play_hide")
+        self.btn_play_hide.connect("clicked", self.btn_play_hide_clicked, None)
 
         btn_hide=builder.get_object("btn_hide")
         btn_hide.connect("clicked", self.btn_hide_clicked, None)
 
-        btn_enqueue=builder.get_object("btn_enqueue")
-        btn_enqueue.connect("clicked", self.btn_enqueue_clicked, None)
+        self.btn_enqueue=builder.get_object("btn_enqueue")
+        self.btn_enqueue.connect("clicked", self.btn_enqueue_clicked, None)
 
         btn_clear=builder.get_object("btn_clear")
         btn_clear.connect("clicked", self.btn_clear_clicked, None)
