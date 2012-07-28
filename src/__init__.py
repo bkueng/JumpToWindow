@@ -246,6 +246,9 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         key = Gdk.keyval_name (event.keyval).lower()
         handled=True
         cursor_pos = self.txt_search.get_property("cursor-position")
+        text_has_focus=self.txt_search.has_focus()
+        shift_down=event.state & Gdk.ModifierType.SHIFT_MASK
+
         if(key == "return" or key == "kp_enter"):
             if(event.state & Gdk.ModifierType.MOD1_MASK):
                 self.enqueue_selected_item()
@@ -258,13 +261,17 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.select_previous_item(False)
         elif(key == "down"):
             self.select_next_item(False)
+        elif(key == "f" and shift_down and text_has_focus):
+            self.scroll_page_down()
+        elif(key == "b" and shift_down and text_has_focus):
+            self.scroll_page_up()
         elif(key == "space"):
             handled=False
-            if(self.txt_search.has_focus()):
+            if(text_has_focus):
                 if(self.was_last_space and cursor_pos == self.last_cursor_pos+1
                     or self.txt_search.get_text()==""):
                     handled=True
-                if(event.state & Gdk.ModifierType.SHIFT_MASK):
+                if(shift_down):
                     self.select_previous_item(False)
                 else:
                     self.select_next_item(False)
@@ -303,6 +310,19 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 iter=nextiter
                 nextiter=model.iter_next(iter)
             self.select_item(iter, use_align) #wrap around
+
+    def scroll_page_down(self):
+        paths=self.playlist_tree.get_visible_range()
+        if(paths!=None):
+            self.select_item_path(paths[len(paths)-1], True)
+
+    def scroll_page_up(self):
+        paths=self.playlist_tree.get_visible_range()
+        if(paths!=None):
+            self.select_item_path(paths[len(paths)-2], True, 1.0)
+            paths=self.playlist_tree.get_visible_range()
+            if(paths!=None):
+                self.select_item_path(paths[len(paths)-2], True)
 
     def select_item(self, treeiter, use_align=True):
         if(self.modelfilter==None): return
