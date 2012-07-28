@@ -65,6 +65,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
         self.is_updating=False
         self.need_refresh_source=False
+        self.last_search_text=""
 
         self.was_last_space=False
         self.last_cursor_pos = 0
@@ -259,11 +260,14 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.select_next_item(False)
         elif(key == "space"):
             handled=False
-            if(self.txt_search.has_focus() and (self.was_last_space and 
-                    cursor_pos == self.last_cursor_pos+1 or
-                    self.txt_search.get_text()=="")):
-                self.select_next_item(False)
-                handled=True
+            if(self.txt_search.has_focus()):
+                if(self.was_last_space and cursor_pos == self.last_cursor_pos+1
+                    or self.txt_search.get_text()==""):
+                    handled=True
+                if(event.state & Gdk.ModifierType.SHIFT_MASK):
+                    self.select_previous_item(False)
+                else:
+                    self.select_next_item(False)
         else:
             handled=False
 
@@ -333,9 +337,11 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
 
     def txt_search_changed(self, widget, string, *args):
-        if(self.is_updating): return
-        self.modelfilter.refilter()
-        self.select_first_item()
+        text=self.txt_search.get_text().strip()
+        if(not self.is_updating and text!=self.last_search_text):
+            self.modelfilter.refilter()
+            self.select_first_item()
+        self.last_search_text=text
 
     def create_columns(self, treeView):
     
