@@ -254,15 +254,15 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         elif(key == "escape"):
             self.window.hide()
         elif(key == "up"):
-            self.select_previous_item()
+            self.select_previous_item(False)
         elif(key == "down"):
-            self.select_next_item()
+            self.select_next_item(False)
         elif(key == "space"):
             handled=False
             if(self.txt_search.has_focus() and (self.was_last_space and 
                     cursor_pos == self.last_cursor_pos+1 or
                     self.txt_search.get_text()=="")):
-                self.select_next_item()
+                self.select_next_item(False)
                 handled=True
         else:
             handled=False
@@ -275,16 +275,16 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         #print " state "+str(event.state)
         return handled
 
-    def select_next_item(self):
+    def select_next_item(self, use_align=True):
         model, treeiter=self.tree_selection.get_selected()
         if(treeiter!=None):
             nextiter=model.iter_next(treeiter)
             if(nextiter!=None):
-                self.select_item(nextiter)
+                self.select_item(nextiter, use_align)
             else:
-                self.select_first_item() #wrap around
+                self.select_first_item(use_align) #wrap around
 
-    def select_previous_item(self):
+    def select_previous_item(self, use_align=True):
         model, seliter=self.tree_selection.get_selected()
         if(self.modelfilter==None or seliter==None): return
         sel_path=model.get_path(seliter)
@@ -294,22 +294,26 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             nextiter=model.iter_next(iter)
             while(nextiter!=None):
                 if(model.get_path(nextiter)==sel_path):
-                    self.select_item(iter)
+                    self.select_item(iter, use_align)
                     return
                 iter=nextiter
                 nextiter=model.iter_next(iter)
-            self.select_item(iter) #wrap around
+            self.select_item(iter, use_align) #wrap around
 
-    def select_item(self, treeiter):
-        self.tree_selection.select_iter(treeiter)
+    def select_item(self, treeiter, use_align=True):
         if(self.modelfilter==None): return
         path=self.modelfilter.get_path(treeiter)
-        self.playlist_tree.scroll_to_cell(path)
+        self.select_item_path(path, use_align)
 
-    def select_first_item(self):
+    def select_item_path(self, tree_path, use_align, align=0.0):
+        if(tree_path!=None):
+            self.tree_selection.select_path(tree_path)
+            self.playlist_tree.scroll_to_cell(tree_path, None, use_align, align)
+
+    def select_first_item(self, use_align=True):
         if(self.modelfilter==None): return
         iter=self.modelfilter.get_iter_first()
-        if(iter): self.select_item(iter)
+        if(iter): self.select_item(iter, use_align)
 
     def make_default_entry_selection(self):
         # by default, select currently playing song
