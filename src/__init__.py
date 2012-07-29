@@ -495,7 +495,6 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.config.load_settings(self.window)
         self.create_columns(self.playlist_tree)
 
-	shell = self.object
         self.action = Gtk.Action (name='JumpToWindow', label=_('Show JumpToWindow'),
                       tooltip=_(''),
                       stock_id='')
@@ -503,7 +502,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.action_group = Gtk.ActionGroup (name='JumpToWindowPluginActions')
         self.action_group.add_action_with_accel (self.action, "<control><shift>J")
 
-        uim = shell.props.ui_manager
+        uim = self.shell.props.ui_manager
         uim.insert_action_group (self.action_group, 0)
         self.ui_id = uim.add_ui_from_string (UI_STRING)
         uim.ensure_update ()
