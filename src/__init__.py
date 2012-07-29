@@ -142,6 +142,11 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         if(view==self.source_view):
             GObject.idle_add(self.refresh_entries)
 
+    def entry_prop_changed(self, model, entry, prop, old, new_value):
+        print prop
+        print old
+        print new_value
+
     # connect to a source and listen for changes
     def track_source(self, new_source):
         if(new_source==self.source): return True
@@ -168,6 +173,10 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.source_view_id_del= \
                     self.source_view.connect("entry-deleted",
                     self.source_entry_deleted)
+        query_model=self.source.props.query_model
+        if(query_model!=None):
+            pass
+            query_model.connect("entry-prop-changed", self.entry_prop_changed)
         return True
 
     def refresh_entries(self):
