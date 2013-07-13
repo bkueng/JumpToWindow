@@ -401,7 +401,20 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         return True
     
     def window_show(self, widget):
-        self.window.move(self.config.window_x, self.config.window_y)
+        # check if out of screen
+        x = self.config.window_x
+        y = self.config.window_y
+        [w, h] = self.window.get_size()
+        screen = Gdk.Screen.get_default()
+        if screen != None:
+            monitor = screen.get_monitor_at_point(x+w/2, y+h/2)
+            geometry = screen.get_monitor_geometry(monitor)
+            if x < geometry.x: x = geometry.x
+            if y < geometry.y: y = geometry.y
+            if x > geometry.x + geometry.width: x = geometry.x
+            if y > geometry.y + geometry.height: y = geometry.y
+
+        self.window.move(x, y)
 
     def window_hide(self, widget):
         width,height=self.window.get_size()
