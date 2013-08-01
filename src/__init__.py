@@ -12,7 +12,7 @@
 #
 
 
-from gi.repository import Gtk, GObject, Peas, RB, Gdk
+from gi.repository import Gtk, GObject, Peas, RB, Gdk, Gio
 import os
 import dbus
 import dbus.service
@@ -20,16 +20,6 @@ from dbus.mainloop.glib import DBusGMainLoop
 
 import configuration
 from configuration_widget import ConfigurationWidget
-
-UI_STRING = '''
-<ui>
-<menubar name="MenuBar">
-<menu name="ViewMenu" action="View">
-<menuitem name="JumpToWindow" action="JumpToWindow"/>
-</menu>
-</menubar>
-</ui>
-'''
 
 global_dbus_obj=None
 
@@ -508,20 +498,22 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.config.load_settings(self.window)
         self.create_columns(self.playlist_tree)
 
-        self.action = Gtk.Action (name='JumpToWindow', label=_('Show JumpToWindow'),
-                      tooltip=_(''),
-                      stock_id='')
-        self.action_id = self.action.connect ('activate', self.dbus_activate_from_menu, 'org.rhythmbox.JumpToWindow')
-        self.action_group = Gtk.ActionGroup (name='JumpToWindowPluginActions')
-        self.action_group.add_action_with_accel (self.action, "<control><shift>J")
 
-        uim = self.shell.props.ui_manager
-        uim.insert_action_group (self.action_group, 0)
-        self.ui_id = uim.add_ui_from_string (UI_STRING)
-        uim.ensure_update ()
+        app = Gio.Application.get_default()
+        action = Gio.SimpleAction(name='open-jumptowindow')
+        action.connect('activate', self.dbus_activate_from_menu)
+        app.add_action(action)
 
+        # Add plugin menu items
+        item = Gio.MenuItem()
+        item.set_label('Open JumpToWindow')
+        item.set_detailed_action('app.open-jumptowindow')
+        app.add_plugin_menu_item('view', 'open-jumptowindow', item)
     
     def do_deactivate (self):
+
+        app = Gio.Application.get_default()
+        app.remove_plugin_menu_item('view', 'open-jumptowindow')
 
         self.dbus_service.set_main_window(None)
         self.dbus_service = None

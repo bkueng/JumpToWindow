@@ -11,6 +11,9 @@ It's very similar to the 'Jump to File' feature in Winamp, including the ability
 to enqueue a song.
 
 
+Note: This plugin requires Rhythmbox 2.99 or newer. For older versions use 
+git tag v0.95 (git checkout v0.95)
+
 
 Installation
 ------------
