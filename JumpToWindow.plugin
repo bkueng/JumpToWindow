@@ -1,5 +1,5 @@
 [Plugin]
-Loader=python
+Loader=python3
 Module=src
 IAge=2
 Name=Jump to Window

@@ -18,8 +18,8 @@ import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 
-import configuration
-from configuration_widget import ConfigurationWidget
+from .configuration_widget import ConfigurationWidget
+from . import configuration
 
 global_dbus_obj=None
 
@@ -61,7 +61,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.last_cursor_pos = 0
 
     def dbus_activate_from_menu(self, str_arg, shell):
-	self.dbus_activate(str_arg)
+        self.dbus_activate(str_arg)
 
 
     def dbus_activate(self, str_arg):
@@ -80,8 +80,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.show_entries()
             if(self.is_updating and search_changed):
                 self.modelfilter.refilter()
-        except Exception, e:
-            print "Exception: "+str(e)
+        except Exception as e:
+            print("Exception: "+str(e))
         self.is_updating=False
         self.make_default_entry_selection()
         return "success"
@@ -172,7 +172,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 # code snipplet for the playlists:
 #        for x in list(self.shell.props.sourcelist.props.model):
 ##           if list(x)[2] == "Playlists"
-#            print list(x)
+#            print(list(x))
 
 
             new_source = self.shell_player.get_active_source()
@@ -201,8 +201,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
             self.playlist_tree.set_model(self.modelfilter)
             self.is_updating=False
 
-        except Exception, e:
-            print "Exception: "+str(e)
+        except Exception as e:
+            print("Exception: "+str(e))
 
     def get_selected_entry(self):
         model, treeiter=self.tree_selection.get_selected()
@@ -272,8 +272,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.last_cursor_pos = cursor_pos
         if(handled): self.last_cursor_pos-=1
 
-        #print "key pressed "+key
-        #print " state "+str(event.state)
+        #print("key pressed "+key)
+        #print(" state "+str(event.state))
         return handled
 
     def select_next_item(self, use_align=True):

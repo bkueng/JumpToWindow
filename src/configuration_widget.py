@@ -13,7 +13,7 @@
 
 
 from gi.repository import Gtk, GObject, RB, Gdk, PeasGtk
-import configuration
+from . import configuration
 import os
 
 HOTKEY_HELP_TEXT = '''

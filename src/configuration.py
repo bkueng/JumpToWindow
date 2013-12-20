@@ -14,7 +14,7 @@
 
 from gi.repository import Gtk, GObject, RB, Gdk
 import os
-import ConfigParser
+import configparser
 
 
 SECTION_KEY = "JumpToWindow"
@@ -55,14 +55,14 @@ class Configuration(GObject.GObject):
     def save_settings(self, main_window, tree_view):
         if(not self.need_save_config): return
         self.need_save_config=False
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
 
         config.add_section(SECTION_KEY)
         width,height=main_window.get_size()
-        config.set(SECTION_KEY, 'window_x', self.window_x)
-        config.set(SECTION_KEY, 'window_y', self.window_y)
-        config.set(SECTION_KEY, 'window_w', width)
-        config.set(SECTION_KEY, 'window_h', height)
+        config.set(SECTION_KEY, 'window_x', str(self.window_x))
+        config.set(SECTION_KEY, 'window_y', str(self.window_y))
+        config.set(SECTION_KEY, 'window_w', str(width))
+        config.set(SECTION_KEY, 'window_h', str(height))
 
         config.set(SECTION_KEY, 'keep_search', str(self.keep_search_text))
         config.set(SECTION_KEY, 'font_size', str(self.font_size))
@@ -85,13 +85,13 @@ class Configuration(GObject.GObject):
         dir=os.path.dirname(config_file_name)
         if(not os.path.exists(dir)):
             os.mkdir(dir)
-        with open(config_file_name, 'wb') as configfile:
+        with open(config_file_name, 'w') as configfile:
             config.write(configfile)
 
     def load_settings(self, main_window):
         try:
 
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser()
             config.add_section(SECTION_KEY)
             config.set('DEFAULT', 'window_x', str(self.window_x))
             config.set('DEFAULT', 'window_y', str(self.window_y))
@@ -135,8 +135,8 @@ class Configuration(GObject.GObject):
                 self.columns_size[i]=config.getint(SECTION_KEY
                         , 'columns_size'+str(i))
 
-        except Exception, e:
-            print "Exception: "+str(e)
+        except Exception as e:
+            print("Exception: "+str(e))
     
     def config_changed(self):
         self.need_save_config=True

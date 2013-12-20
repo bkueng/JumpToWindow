@@ -11,7 +11,7 @@ It's very similar to the 'Jump to File' feature in Winamp, including the ability
 to enqueue a song.
 
 
-Note: This plugin requires Rhythmbox 2.99 or newer. For older versions use 
+Note: This plugin requires Rhythmbox 3.0 or newer. For older versions use 
 git tag v0.95 (git checkout v0.95)
 
 
@@ -22,17 +22,19 @@ Installation
 	   Or copy the content of this folder to the directory
 	   "/home/<user>/.local/share/rhythmbox/plugins/JumpToWindow/"
 	   (If this directory doesn't exist, create it!)
+	
+	2) install packages 'python3-dbus' (eg yum install python3-dbus)
 
-	2) Install a global hotkey that executes the script
+	3) Install a global hotkey that executes the script
 	   "/home/<user>/.local/share/rhythmbox/plugins/JumpToWindow/src/activate.py"
 
 	   - For gnome go to System -> Preferences -> Keyboard Shortcuts -> Add
 	   - Or you can use the window manager independant package 'xbindkeys'
 	     (http://www.nongnu.org/xbindkeys/xbindkeys.html)
 
-	3) Enable the plugin in Rhythmbox under 'Edit > Plugins'
+	4) Enable the plugin in Rhythmbox under 'Edit > Plugins'
 
-	4) You probably have to lower the focus prevention level in your window
+	5) You probably have to lower the focus prevention level in your window
 	   manager, that the Jump to window gets the focus, when the hotkey is
 	   pressed.
 
