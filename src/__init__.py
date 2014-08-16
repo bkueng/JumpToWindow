@@ -79,7 +79,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 self.txt_search.set_text("")
             self.show_entries()
             if(self.is_updating and search_changed):
-                self.modelfilter.refilter()
+                self.refilter()
         except Exception as e:
             print("Exception: "+str(e))
         self.is_updating=False
@@ -107,18 +107,24 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
     def get_queue_source(self):
         return self.shell.get_property("queue-source")
 
-    # model filter: use search text to filter items
-    def visible_func(self, model, iter, user_data):
-        text_list = self.txt_search.get_text().lower().split(' ')
-        for text in text_list:
+    def refilter(self):
+        search_text = self.txt_search.get_text().lower()
+        text_list = search_text.split(' ')
+        model = self.modelfilter.get_model()
+        col_len = len(self.config.columns_search)
+        search_cols = [ i for i in range(col_len) if self.config.columns_search[i] ]
+        for row in model:
+            model_values = [ row[i].lower() for i in search_cols ]
+            cur_row_visible = row[self.visibility_col]
             visible=False
-            for i in range(len(self.config.columns_search)):
-                if(self.config.columns_search[i] and 
-                        text in model.get_value(iter, i).lower()):
-                    visible=True
-            if(not visible): return(False)
-        return visible
-
+            for text in text_list:
+                visible=False
+                for value in model_values:
+                    if(text in value):
+                        visible=True
+                if(not visible): break
+            if cur_row_visible != visible:
+                row[self.visibility_col] = visible
 
     def source_entries_replaced(self, view, user_data=None):
         if(view==self.source_view):
@@ -184,7 +190,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 self.modelfilter=None
                 return
 
-            model = Gtk.ListStore(str, str, str, int, str)
+            model = Gtk.ListStore(str, str, str, int, str, bool)
 
             for row in self.source.props.query_model: #or: base_query_model ?
                 entry = row[0]
@@ -194,10 +200,11 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 play_count = int(entry.get_ulong(
                     RB.RhythmDBPropType.PLAY_COUNT))
                 location = entry.get_string(RB.RhythmDBPropType.LOCATION)
-                model.append([artist, album, title, play_count, location])
+                model.append([artist, album, title, play_count, location, True])
 
             self.modelfilter = model.filter_new()
-            self.modelfilter.set_visible_func(self.visible_func, None)
+            self.visibility_col = 5
+            self.modelfilter.set_visible_column(self.visibility_col)
             self.playlist_tree.set_model(self.modelfilter)
             self.is_updating=False
 
@@ -349,7 +356,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
     def txt_search_changed(self, widget, string, *args):
         text=self.txt_search.get_text().strip()
         if(not self.is_updating and text!=self.last_search_text):
-            self.modelfilter.refilter()
+            self.refilter()
             self.select_first_item()
         self.last_search_text=text
 
