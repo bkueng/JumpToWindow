@@ -13,6 +13,8 @@
 
 
 from gi.repository import Gtk, GObject, Peas, RB, Gdk, Gio
+import threading
+import array
 import os
 import dbus
 import dbus.service
@@ -22,6 +24,86 @@ from .configuration_widget import ConfigurationWidget
 from . import configuration
 
 global_dbus_obj=None
+
+GObject.threads_init()
+
+# background thread for filtering.
+# the main reason for this is to not block the ui thread & to be able to
+# abort/interrupt a running filtering (-> search while typing).
+# a single search itself is quite fast, so introducing more than one threads for
+# this is not necessary
+class FilterThread(threading.Thread):
+    def __init__(self, callback, config):
+        threading.Thread.__init__(self)
+        self.callback = callback
+        self.aborted = False
+        self.search_text = ""
+        self.data = None
+        self.sema = threading.Semaphore(0)
+        self.config = config
+        self.modelfilter = None
+        self.visibility_col = None
+        self.quit = False
+
+    def run(self):
+        while(True):
+            self.sema.acquire()
+            if self.quit: return
+            self.aborted=False
+            self.do_filter()
+
+    def do_filter(self):
+        if self.modelfilter == None: return
+
+        data = self.data
+        search_text = self.search_text.lower()
+        text_list = search_text.split(' ')
+
+        self.last_search_text = search_text
+        model = self.modelfilter.get_model()
+        col_len = len(self.config.columns_search)
+        search_cols = [ i for i in range(col_len) if self.config.columns_search[i] ]
+        i = 0
+        for row in model:
+            model_values = [ row[i].lower() for i in search_cols ]
+            cur_row_visible = row[self.visibility_col]
+            visible=0
+            for text in text_list:
+                visible=0
+                for value in model_values:
+                    if(text in value):
+                        visible=1
+                if(visible == 0): break
+            data[i] = visible
+            i = i + 1
+            if self.aborted: break
+
+        if not self.aborted:
+            # The callback runs a GUI task, so wrap it!
+            GObject.idle_add(self.callback, data)
+
+
+    # public interface
+    def stop(self):
+        self.quit = True
+        self.sema.release()
+
+    def abort_filter(self):
+        self.aborted=True
+
+    def get_list(self):
+        return self.data
+
+    def reset_list(self, new_length, visibility_col, modelfilter):
+        self.visibility_col = visibility_col
+        self.modelfilter = modelfilter
+        self.abort_filter()
+        self.data = array.array('i', (x for x in range(new_length)))
+
+    def set_search_text(self, text):
+        self.search_text=text
+        self.sema.release()
+
 
 # IPC class: for hotkey activation
 class MyDBUSService(dbus.service.Object):
@@ -53,10 +135,10 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.source_view=None
         self.modelfilter=None
         self.sel_item_tag=0
+        self.last_search_text=""
 
         self.is_updating=False
         self.need_refresh_source=False
-        self.last_search_text=""
 
         self.was_last_space=False
         self.last_cursor_pos = 0
@@ -80,11 +162,12 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 self.txt_search.set_text("")
             self.show_entries()
             if(self.is_updating and search_changed):
-                self.refilter()
+                self.refilter(False)
+            else:
+                self.make_default_entry_selection()
         except Exception as e:
             print("Exception: "+str(e))
         self.is_updating=False
-        self.make_default_entry_selection()
         return "success"
 
     def playlist_row_activated(self, treeview, path, view_column,
@@ -108,24 +191,36 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
     def get_queue_source(self):
         return self.shell.get_property("queue-source")
 
-    def refilter(self):
-        search_text = self.txt_search.get_text().lower()
-        text_list = search_text.split(' ')
+    # callback for the filter thread: update the ui after filtering
+    def filter_update_cb(self, data):
         model = self.modelfilter.get_model()
-        col_len = len(self.config.columns_search)
-        search_cols = [ i for i in range(col_len) if self.config.columns_search[i] ]
+        i = 0
+        # this improves update speed
+        self.playlist_tree.set_model(None)
+        self.playlist_tree.freeze_child_notify()
+        # update ui list
         for row in model:
-            model_values = [ row[i].lower() for i in search_cols ]
-            cur_row_visible = row[self.visibility_col]
-            visible=False
-            for text in text_list:
-                visible=False
-                for value in model_values:
-                    if(text in value):
-                        visible=True
-                if(not visible): break
-            if cur_row_visible != visible:
+            visible = (data[i] == 1)
+            if row[self.visibility_col] != visible:
                 row[self.visibility_col] = visible
+            i = i + 1
+        self.playlist_tree.thaw_child_notify()
+        self.playlist_tree.set_model(self.modelfilter)
+        if self.bselect_first_item:
+            self.select_first_item()
+        else:
+            self.make_default_entry_selection()
+
+    # main function for refiltering, eg. when search text changes. this will
+    # activate the filter thread
+    def refilter(self, bselect_first_item=True):
+        search_text = self.txt_search.get_text()
+        if self.last_search_text.strip() != search_text.strip():
+            self.bselect_first_item = bselect_first_item
+            self.thread.abort_filter()
+            self.thread.set_search_text(search_text)
+            self.last_search_text = search_text
+        return True
 
     def source_entries_replaced(self, view, user_data=None):
         if(view==self.source_view):
@@ -192,6 +287,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                 return
 
             model = Gtk.ListStore(str, str, str, int, str, bool)
+            count = 0
 
             for row in self.source.props.query_model: #or: base_query_model ?
                 entry = row[0]
@@ -202,12 +298,14 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
                     RB.RhythmDBPropType.PLAY_COUNT))
                 location = entry.get_string(RB.RhythmDBPropType.LOCATION)
                 model.append([artist, album, title, play_count, location, True])
+                count = count + 1
 
             self.modelfilter = model.filter_new()
             self.visibility_col = 5
             self.modelfilter.set_visible_column(self.visibility_col)
             self.playlist_tree.set_model(self.modelfilter)
             self.is_updating=False
+            self.thread.reset_list(count, self.visibility_col, self.modelfilter)
 
         except Exception as e:
             print("Exception: "+str(e))
@@ -360,10 +458,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
 
     def txt_search_changed(self, widget, string, *args):
         text=self.txt_search.get_text().strip()
-        if(not self.is_updating and text!=self.last_search_text):
-            self.refilter()
-            self.select_first_item()
-        self.last_search_text=text
+        if(not self.is_updating):
+            self.refilter(True)
 
     def tree_selection_changed(self, tree_selection):
         has_selection = self.get_selected_entry()!=None
@@ -515,6 +611,8 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.config.load_settings(self.window)
         self.create_columns(self.playlist_tree)
 
+        self.thread = FilterThread(self.filter_update_cb, self.config)
+        self.thread.start()
 
         app = Gio.Application.get_default()
         action = Gio.SimpleAction(name='open-jumptowindow')
@@ -535,6 +633,9 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.dbus_service.set_main_window(None)
         self.dbus_service = None
         self.config=None
+        if self.thread:
+            self.thread.stop()
+        self.thread = None
 
         self.window.destroy()
         self.window=None
