@@ -52,6 +52,7 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.source=None
         self.source_view=None
         self.modelfilter=None
+        self.sel_item_tag=0
 
         self.is_updating=False
         self.need_refresh_source=False
@@ -329,7 +330,13 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
     def select_item_path(self, tree_path, use_align, align=0.0):
         if(tree_path!=None):
             self.tree_selection.select_path(tree_path)
-            self.playlist_tree.scroll_to_cell(tree_path, None, use_align, align)
+            # *try* to avoid some ugly redrawing artifacts
+            def F(tag):
+                if tag == self.sel_item_tag:
+                    self.playlist_tree.scroll_to_cell(tree_path, None, use_align, align)
+                return False
+            self.sel_item_tag = self.sel_item_tag + 1
+            GObject.idle_add(F, self.sel_item_tag)
 
     def select_first_item(self, use_align=True):
         if(self.modelfilter==None): return
