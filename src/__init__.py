@@ -416,6 +416,9 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         self.window.move(x, y)
 
     def window_hide(self, widget):
+        # speedup next show: clear search text & update in background
+        if(not self.config.keep_search_text and self.txt_search.get_text()!=""):
+            self.txt_search.set_text("")
         width,height=self.window.get_size()
         if(width!=self.config.window_w or height!=self.config.window_h):
             self.config.need_save_config=True
