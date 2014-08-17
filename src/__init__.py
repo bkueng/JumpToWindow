@@ -389,7 +389,9 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         
         column = Gtk.TreeViewColumn()
         column.set_visible(False)
+        column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         treeView.append_column(column)
+        treeView.set_fixed_height_mode(True)
         self.column_item_loc=len(column_headers)
 
     def delete_event(self,window,event):
