@@ -341,13 +341,11 @@ class JumpToWindow(GObject.GObject, Peas.Activatable):
         playing_entry = self.shell_player.get_playing_entry()
         if(playing_entry != None):
             playing_loc = playing_entry.get_string(RB.RhythmDBPropType.LOCATION)
-            iter=self.modelfilter.get_iter_first()
-            while(iter!=None):
-                entry_loc=self.modelfilter.get_value(iter, self.column_item_loc)
+            for row in self.modelfilter:
+                entry_loc = row[self.column_item_loc]
                 if(entry_loc == playing_loc):
-                    self.select_item(iter)
+                    self.select_item(row.iter)
                     return
-                iter=self.modelfilter.iter_next(iter)
         model, seliter=self.tree_selection.get_selected()
         if(seliter==None):
             self.select_first_item() # fallback if current playing not found
